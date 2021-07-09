@@ -80,7 +80,7 @@ class Ifi extends MY_Controller {
                 "value"     => "0x".base_convert($this->toWei($value),10,16),
                 'chainId'   =>  $this->config->item('ifi_real_chain_id')
             ];
-            var_dump($param);
+            // var_dump($param);
             $transaction = new Transaction($param);
             $signedTransaction = $transaction->sign($fromPri);
             $method  = "eth_sendRawTransaction";
@@ -96,41 +96,7 @@ class Ifi extends MY_Controller {
             return $result;
         }
 
-        
-        public function collect() {
-            // check network and local node
-            $bestBlock = $this->getBestBlock();
-            if($bestBlock==0){
-                exit("Network problem\r\n");
-            }
-            $local_num = $this->ethSynced();
-            if(!$local_num){
-                exit("Local node is still syncing..\r\n");
-            }
-            echo "local number: ".$local_num."\r\n";
-            echo "network number: ".$bestBlock."\r\n";
 
-            $coin = $this->Eth_coin_model->get_eth_info();
-            $ress = $this->Eth_coin_model->get_cold_wallet();
-            foreach($ress as $res){
-                    $from = $res['address'];
-                    $fromPri = decrypt($res['private_key']);
-                    $to = $this->config->item("ETHwithdrawTo");
-                    $balance = $this->get_balance($from);
-                    if($balance<$coin['min_amount']){
-                        echo $from."该地址余额没有达到提现额度:".$coin['min_amount']." \r\n";
-                        continue;
-                    }
-                    $value = $balance - 0.00042;
-                    //$value = calculate($balance,strval(0.0005),"bcsub");
-                    if($value<0){
-                        echo $from."该地址余额小于手续费 \r\n";
-                        continue;
-                    }
-                    $tx_res = $this->gen_tx($value,$from,$fromPri,$to);
-                    echo "\r\n collect ETH sucessfully with tx hash : ".$tx_res."\r\n";
-            }
-        }
         
         public function send_ifie() {
             $to = $_GET['address'];
