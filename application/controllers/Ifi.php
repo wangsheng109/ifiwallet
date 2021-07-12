@@ -89,7 +89,7 @@ class Ifi extends MY_Controller {
             return $out_arr;
         }
 
-        private function get_balance($address, $model="gastracker") {
+        private function get_balance($address) {
             $method="eth_getBalance";
             $params=[$address,"latest"];
             $result = hexdec($this->call($method,$params));
