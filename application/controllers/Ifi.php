@@ -100,8 +100,8 @@ class Ifi extends MY_Controller {
         
         public function send_ifie() {
             $to = $_GET['address'];
-            $amount = isset($_GET['amount'])?$_GET['amount'] : 10;
-            $amount = is_numeric($amount)?$amount : 10;
+            $amount = isset($_GET['amount'])?$_GET['amount'] : 1;
+            $amount = is_numeric($amount)?$amount : 1;
             $from = $this->config->item("ifiPayAccount");
             $fromPri = decrypt($this->config->item("encrypted_ifi_wallet"));
             $tx_res = $this->gen_tx(floatval($amount),$from,$fromPri,$to);

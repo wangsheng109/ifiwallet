@@ -50,8 +50,15 @@ class Irc20 extends MY_Controller {
             $from = $this->config->item("ifiPayAccount");
             $fromPri = decrypt($this->config->item("encrypted_ifi_wallet"));
             $contract = "0x4D2f63d6826603B84D12C1C7dd33aB7F3BDe7553";
-            $tx_res = $this->send_token($amount,$from,$fromPri,$contract,$to);
+            $tx_res = $this->send_token($this->add_random($amount),$from,$fromPri,$contract,$to);
             echo "\r\n send ifi sucessfully with tx hash : ".$tx_res."\r\n";
+        }
+
+        private function add_random($amount)
+        {
+            $dec_amount = base_convert($amount,16,10);
+            $new_dec = $dec_amount*(rand(0,20)+100)/100;
+            return base_convert($new_dec,10,16);
         }
 
      
