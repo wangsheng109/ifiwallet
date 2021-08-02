@@ -23,7 +23,7 @@ class Ette_model extends CI_Model {
         $this->psql->select('hash');
         $this->psql->from('transactions');
         $this->psql->where('from','0x0000000000000000000000000000000000000000');
-        $this->psql->limit(10);
+        $this->psql->limit(50);
         $query = $this->psql->get();
         return $query->result_array();
     }

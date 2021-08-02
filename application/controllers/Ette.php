@@ -48,7 +48,7 @@ class Ette extends MY_Controller {
             }
             $block_num = intval($check_block);
             echo "\r\n check from the block number :".$block_num." \r\n";
-            for($i=$block_num;$i<$block_num+10;$i++){
+            for($i=$block_num;$i<$block_num+50;$i++){
                 $block = $this->get_block($i);
                 $blockNum = base_convert($block['number'],16,10);
                 echo "\r\n get block with number : ".$blockNum." \r\n";
@@ -91,7 +91,7 @@ class Ette extends MY_Controller {
                 }
                 
             }
-            $new_var['value'] = $block_num +10;
+            $new_var['value'] = $block_num +50;
             $where['name'] = "next_check_block";
             $this->ette_model->update_config_vars($new_var,$where);
         }
