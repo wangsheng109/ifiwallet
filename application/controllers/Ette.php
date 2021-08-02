@@ -47,7 +47,7 @@ class Ette extends MY_Controller {
                 exit;
             }
             $block_num = intval($check_block);
-            echo "\r\n check from the block number :".$block_num." \r\n";
+            echo "\r\n check from the block number :".$block_num." with later 50 ones\r\n";
             for($i=$block_num;$i<$block_num+50;$i++){
                 $block = $this->get_block($i);
                 $blockNum = base_convert($block['number'],16,10);
