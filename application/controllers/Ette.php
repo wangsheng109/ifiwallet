@@ -47,8 +47,10 @@ class Ette extends MY_Controller {
                 exit;
             }
             $block_num = intval($check_block);
+            $best_block = $this->get_best_block();
+            $final_block = ($block_num+500>$best_block)?$best_block:$block_num+500;
             echo "\r\n check from the block number :".$block_num." with later 500 ones\r\n";
-            for($i=$block_num;$i<$block_num+500;$i++){
+            for($i=$block_num;$i<$final_block;$i++){
                 $block = $this->get_block($i);
                 $blockNum = base_convert($block['number'],16,10);
                 echo "\r\n get block with number : ".$blockNum." \r\n";
@@ -91,7 +93,7 @@ class Ette extends MY_Controller {
                 }
                 
             }
-            $new_var['value'] = $block_num +500;
+            $new_var['value'] = $final_block;
             $where['name'] = "next_check_block";
             $this->ette_model->update_config_vars($new_var,$where);
         }
@@ -113,6 +115,17 @@ class Ette extends MY_Controller {
                 exit("\r\n error when getting nonce \r\n");
             }
             $count = hexdec($result);
+            return $count;
+        }
+
+        public function get_best_block() {
+            $method  = "eth_blockNumber";
+            $param = [];
+            $result = $this->call($method,$param);
+            if(is_array($result)){
+                exit("\r\n error when getting nonce \r\n");
+            }
+            $count = base_convert($result,16,10);
             return $count;
         }
 
