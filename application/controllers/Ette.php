@@ -34,10 +34,29 @@ class Ette extends MY_Controller {
             foreach($arr as $v){
                 $data['from'] = $v['from'];
                 $where['hash'] = $v['hash'];
-                $this->ette_model->update_from_by_hash($data,$where);
+                $this->ette_model->update_tx_by_hash($data,$where);
                 echo "\r\n update tx ".$v['hash']." with new from: ".$v['from']."\r\n";
             }
             
+        }
+
+        // correct tx's blocknumber and timestamp
+        public function correct_blocknumber() {
+            $source = $this->ette_model->get_wrong_bn_txs();
+            $arr = array();
+            foreach($source as $v){
+                $a = $this->get_trx($v['hash']);
+                $arr[] = $a;
+            }
+            //var_dump($a); exit;
+            foreach($arr as $v){
+                $block = $this->get_block($v['blockNumber']);
+                $data['blockNumber'] = base_convert($v['blockNumber'],16,10);
+                $data['timestamp'] = base_convert($block['timestamp'],16,10);
+                $where['hash'] = $v['hash'];
+                $this->ette_model->update_tx_by_hash($data,$where);
+                echo "\r\n update tx ".$v['hash']." with new blocknumber: ".$data['blockNumber']." and timestamp: ".$data['timestamp']."\r\n";
+            }
         }
 
         public function correct_block() {

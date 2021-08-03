@@ -28,7 +28,16 @@ class Ette_model extends CI_Model {
         return $query->result_array();
     }
 
-    public function update_from_by_hash($data,$where){
+    public function get_wrong_bn_txs(){
+        $this->psql->select('hash');
+        $this->psql->from('transactions');
+        $this->psql->where('blockNumber',0);
+        $this->psql->limit(50);
+        $query = $this->psql->get();
+        return $query->result_array();
+    }
+
+    public function update_tx_by_hash($data,$where){
         $this->psql->update('transactions',$data,$where);
     }
 
