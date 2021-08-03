@@ -75,7 +75,8 @@ class Ette extends MY_Controller {
                         'unclehash' =>  $block['sha3Uncles'],
                         'txroothash'  => $block['transactionsRoot'], 
                         'receiptroothash'   =>  $block['receiptsRoot'],
-                        'inputdata' =>  $block['extraData']
+                        'inputdata' =>  $block['extraData'],
+                        'tx_num'    =>  count($block['transactions'])
                     );
                     $this->ette_model->insert_block($data);
                     echo "\r\n block with hash ".$block['hash']." inserted to db\r\n";
