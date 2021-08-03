@@ -47,8 +47,8 @@ class Ette extends MY_Controller {
                 exit;
             }
             $block_num = intval($check_block);
-            echo "\r\n check from the block number :".$block_num." with later 50 ones\r\n";
-            for($i=$block_num;$i<$block_num+50;$i++){
+            echo "\r\n check from the block number :".$block_num." with later 500 ones\r\n";
+            for($i=$block_num;$i<$block_num+500;$i++){
                 $block = $this->get_block($i);
                 $blockNum = base_convert($block['number'],16,10);
                 echo "\r\n get block with number : ".$blockNum." \r\n";
@@ -67,7 +67,7 @@ class Ette extends MY_Controller {
                         'gasused'   =>  base_convert($block['gasUsed'],16,10),
                         'gaslimit'  =>  base_convert($block['gasLimit'],16,10),
                         'nonce' =>  base_convert($block['nonce'],16,10),
-                        'miner' =>  '0x0000000000000000000000000000000000000000',  // TO DO, in POA it is singer
+                        'miner' =>  '0x0000000000000000000000000000000000000000',  // TO DO, in POA it is signer
                         'size'  =>  base_convert($block['size'],16,10),
                         'stateroothash' =>  $block['stateRoot'],
                         'unclehash' =>  $block['sha3Uncles'],
@@ -91,7 +91,7 @@ class Ette extends MY_Controller {
                 }
                 
             }
-            $new_var['value'] = $block_num +50;
+            $new_var['value'] = $block_num +500;
             $where['name'] = "next_check_block";
             $this->ette_model->update_config_vars($new_var,$where);
         }
