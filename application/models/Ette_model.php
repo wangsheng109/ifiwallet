@@ -32,7 +32,7 @@ class Ette_model extends CI_Model {
         $this->psql->select('hash');
         $this->psql->from('transactions');
         $this->psql->where('blockNumber',0);
-        $this->psql->limit(500);
+        $this->psql->limit(250);
         $query = $this->psql->get();
         return $query->result_array();
     }
