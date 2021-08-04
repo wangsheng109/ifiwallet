@@ -31,7 +31,7 @@ class Ette_model extends CI_Model {
     public function get_wrong_bn_txs(){
         $this->psql->select('hash');
         $this->psql->from('transactions');
-        $this->psql->where('blockNumber',0);
+        $this->psql->where('timestamp',0);
         $this->psql->limit(250);
         $query = $this->psql->get();
         return $query->result_array();
