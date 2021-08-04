@@ -48,10 +48,10 @@ class Ette extends MY_Controller {
                 $a = $this->get_trx($v['hash']);
                 $arr[] = $a;
             }
-            //var_dump($a); exit;
             foreach($arr as $v){
-                $block = $this->get_block($v['blockNumber']);
-                $data['blockNumber'] = base_convert($v['blockNumber'],16,10);
+                $blockNumber = base_convert($v['blockNumber'],16,10);
+                $block = $this->get_block($blockNumber);
+                $data['blockNumber'] = $blockNumber;
                 $data['timestamp'] = base_convert($block['timestamp'],16,10);
                 $where['hash'] = $v['hash'];
                 $this->ette_model->update_tx_by_hash($data,$where);
@@ -146,6 +146,7 @@ class Ette extends MY_Controller {
                 exit("\r\n error when getting nonce \r\n");
             }
             $count = base_convert($result,16,10);
+            echo "\r\n best block : ".$count."\r\n";
             return $count;
         }
 
