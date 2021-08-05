@@ -67,12 +67,16 @@ class Ette extends MY_Controller {
             }
             $block_num = intval($check_block);
             $best_block = $this->get_best_block();
-            $final_block = ($block_num+500>$best_block)?$best_block:$block_num+500;
-            echo "\r\n check from the block number :".$block_num." with later 500 ones\r\n";
+            $final_block = ($block_num+50>$best_block)?$best_block:$block_num+50;
+            echo "\r\n check from the block number :".$block_num." with later 50 ones\r\n";
             for($i=$block_num;$i<$final_block;$i++){
                 $block = $this->get_block($i);
                 $blockNum = base_convert($block['number'],16,10);
                 echo "\r\n get block with number : ".$blockNum." \r\n";
+                // check transactions in block :
+                if(count($block['transactions'])>0){
+                    $this->correct_txs_in_block($block['transactions'],$block['timestamp'],$i);
+                }
                 // check block from database
                 $has_block = $this->ette_model->has_block($blockNum);
                 echo "\r\n has block result : ".$has_block." \r\n";
@@ -102,9 +106,10 @@ class Ette extends MY_Controller {
                 } else {
                     echo "\r\n this block is in db, just need to check hash";
                     if($has_block !== $block['hash']) {
-                        $blockHash['hash'] = $block['hash'];
+                        $blockUpdate['hash'] = $block['hash'];
+                        $blockUpdate['tx_num'] = count($block['transactions']);
                         $blockWhere['number'] = $blockNum;
-                        $this->ette_model->update_block_hash($blockHash,$blockWhere);
+                        $this->ette_model->update_block($blockUpdate,$blockWhere);
                         echo "\r\n block with hash ".$block['hash']." updated to db\r\n";
                     } else {
                         echo "\r\n block with hash ".$block['hash']." in db is correct, nothing to do\r\n";
@@ -117,7 +122,35 @@ class Ette extends MY_Controller {
             $where['name'] = "next_check_block";
             $this->ette_model->update_config_vars($new_var,$where);
         }
-        
+
+        private function correct_txs_in_block($txs=array(),$timestamp,$blockNumber) {
+            foreach($txs as $trx) {
+                $tx = $trx['hash'];
+                $has = $this->ette_model->has_tx($tx);
+                if($has<=0){
+                    echo "\r\n tx with hash :".$tx." in block ".$blockNumber." does not exists, need to insert";
+                    $trx = $this->get_trx($tx);
+                    $data = array(
+                        'hash'  =>  $tx,
+                        'from'  =>  $trx['from'],
+                        'to'    =>  $trx['to'],
+                        'value' =>  base_convert($trx['value'],16,10),
+                        'input_data'    =>  $trx['input'],
+                        'gas'   =>  base_convert($trx['gas'],16,10),
+                        'gasPrice'  =>  base_convert($trx['gasPrice'],16,10),
+                        'cost'  =>  0,
+                        'nonce' =>  base_convert($trx['nonce'],16,10),
+                        'state' =>  1,
+                        'blockhash' =>  $trx['blockHash'],
+                        'blockNumber'   =>  $blockNumber,
+                        'timestamp' =>  $timestamp
+                    );
+                    $this->ette_model->insert_transactions($data);
+                    echo "\r\n insert transactions successfully with hash : ".$tx;
+                }
+            }
+        }
+
         
         public function decrypt_tool() {
             echo decrypt($this->config->item('test_private_key'))."\r\n";

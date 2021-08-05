@@ -61,11 +61,24 @@ class Ette_model extends CI_Model {
         }
     }
 
+    public function has_tx($hash) {
+        $this->psql->select('hash');
+        $this->psql->from('transactions');
+        $this->psql->where('hash', $hash);
+        $query = $this->psql->get();
+        $count = $query->num_rows();
+        return $count;
+    }
+
     public function insert_block($data) {
         $this->psql->insert('blocks', $data);
     }
 
-    public function update_block_hash($data, $where) {
+    public function insert_transactions($data) {
+        $this->psql->insert('transactions', $data);
+    }
+
+    public function update_block($data, $where) {
         $this->psql->update('blocks',$data,$where);
     }
 
