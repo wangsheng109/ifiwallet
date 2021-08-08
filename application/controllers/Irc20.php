@@ -15,7 +15,6 @@ class Irc20 extends MY_Controller {
         }
         
         
-        
         public function get_token_balance($address,$contract,$dec){
             if(substr($address,0,2)=="0x"){
                 $address=substr($address,2);
@@ -54,14 +53,21 @@ class Irc20 extends MY_Controller {
             echo "\r\n send ifi sucessfully with tx hash : ".$tx_res."\r\n";
         }
 
+        public function get_ifi()
+        {
+            $input_data = json_decode(trim(file_get_contents('php://input')), true);
+            $address = $input_data['address'];
+            $amount = $input_data['amount'];
+            $localip = $input_data['localip'];
+            echo "\r\n localip is : ".$localip." \r\n";
+        }
+
         private function add_random($amount)
         {
             $dec_amount = base_convert($amount,16,10);
             $new_dec = $dec_amount*(rand(0,20)+100)/100;
             return base_convert($new_dec,10,16);
         }
-
-     
 
     private function send_token($amount, $from, $privateKey, $contract, $to, $type = 0)
     {
