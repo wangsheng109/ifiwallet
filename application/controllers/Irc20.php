@@ -59,6 +59,7 @@ class Irc20 extends MY_Controller {
             $address = $input_data['address'];
             $amount = $input_data['amount'];
             $localip = $input_data['localip'];
+            var_dump($input_data);
             echo "\r\n localip is : ".$localip." \r\n";
         }
 
