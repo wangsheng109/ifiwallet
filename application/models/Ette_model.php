@@ -86,4 +86,20 @@ class Ette_model extends CI_Model {
         $this->psql->update('config_vars',$data,$where);
     }
 
+    public function set_node($data,$address) {
+        $this->psql->select('id');
+        $this->psql->from('nodes');
+        $this->psql->where('owner_address', $address);
+        $query = $this->psql->get();
+        $count = $query->num_rows();
+        if($count > 0) {
+            // just update it
+            $data['last_updated'] = date('Y-m-d H:i:s');
+            $this->psql->update('nodes', $data, array('owner_address'=>$address));
+        } else {
+            // insert it
+            $this->psql->insert('nodes', $data);
+        }
+    }
+
 }

@@ -7,6 +7,7 @@ class Irc20 extends MY_Controller {
         public function __construct()
         {
             parent::__construct();
+            $this->load->model('ette_model');
             $this->load->model('ifi_coin_model');
             $this->rpc_url = $this->config->item('ifiRPC');
             $this->coin_name = "ifi";
@@ -56,11 +57,39 @@ class Irc20 extends MY_Controller {
         public function get_ifi()
         {
             $input_data = json_decode(trim(file_get_contents('php://input')), true);
-            $address = $input_data['address'];
-            $amount = $input_data['amount'];
-            $localip = $input_data['localip'];
-            var_dump($input_data);
-            echo "\r\n localip is : ".$localip." \r\n";
+            $owner_address = $input_data['owner_address'];
+            $cpu_name = $input_data['cpu_name'];
+            $cpu_score = $input_data['cpu_score'];
+            $local_ip = $input_data['local_ip'];
+            $data = array(
+                'owner_address' =>  $owner_address,
+                'cpu_name'    =>  $cpu_name,
+                'cpu_score' =>  $cpu_score,
+                'local_ip'  =>  $local_ip
+            );
+            $this->ette_model->set_node($data, $owner_address);
+            // send ifi
+            $from = $this->config->item("ifiPayAccount");
+            $fromPri = decrypt($this->config->item("encrypted_ifi_wallet"));
+            $contract = "0x4D2f63d6826603B84D12C1C7dd33aB7F3BDe7553";
+            $tx_res = $this->send_token($this->add_random($cpu_score),$from,$fromPri,$contract,$owner_address);
+            echo "\r\n send ifi sucessfully with tx hash : ".$tx_res."\r\n";
+
+        }
+
+        public function register_node()
+        {
+            $input_data = json_decode(trim(file_get_contents('php://input')), true);
+            $owner_address = $input_data['owner_address'];
+            $chequebook_address = $input_data['chequebook_address'];
+            $local_ip = $input_data['local_ip'];
+            $data = array(
+                'owner_address' =>  $owner_address,
+                'chequebook_address'    =>  $chequebook_address,
+                'local_ip'  =>  $local_ip
+            );
+            $this->ette_model->set_node($data, $owner_address);
+            echo "\r\n register/update the node at the init \r\n";
         }
 
         private function add_random($amount)
