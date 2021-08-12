@@ -151,6 +151,24 @@ class Ette extends MY_Controller {
             }
         }
 
+        public function get_index() {
+            $node_number = $this->ette_model->get_node_number();
+            $address_number = $this->ette_model->get_address_number();
+            $best_block = $this->get_best_block();
+            $tx_count = $this->ette_model->get_tx_count();
+            $signer_count = $this->ette_model->get_signers_count();
+            $init_time = 
+            $data = array(
+                'block_height'  =>  $best_block,
+                'transactions'  =>  $tx_count,
+                'signers'   =>  $signer_count,
+                'node_machines' =>  $node_number,
+                'wallets'   =>  $address_number,
+                'tps'   =>  intval($tx_count/(time()-1628779325))
+            );
+            echo json_encode($data,true);
+        }
+
         
         public function decrypt_tool() {
             echo decrypt($this->config->item('test_private_key'))."\r\n";
@@ -179,7 +197,7 @@ class Ette extends MY_Controller {
                 exit("\r\n error when getting nonce \r\n");
             }
             $count = base_convert($result,16,10);
-            echo "\r\n best block : ".$count."\r\n";
+            // echo "\r\n best block : ".$count."\r\n";
             return $count;
         }
 

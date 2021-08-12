@@ -102,4 +102,37 @@ class Ette_model extends CI_Model {
         }
     }
 
+    public function get_node_number() {
+        $this->psql->select('id');
+        $this->psql->from('nodes');
+        $this->psql->where('last_updated >', date('Y-m-d H:i:s', time()-3600));
+        $query = $this->psql->get();
+        $count = $query->num_rows();
+        return $count;
+    }
+
+    public function get_address_number() {
+        $this->psql->select('id');
+        $this->psql->from('nodes');
+        $query = $this->psql->get();
+        $count = $query->num_rows();
+        return $count;
+    }
+
+    public function get_tx_count() {
+        $this->psql->select('hash');
+        $this->psql->from('transactions');
+        $query = $this->psql->get();
+        $count = $query->num_rows();
+        return $count;
+    }
+
+    public function get_signers_count() {
+        $this->psql->select('id');
+        $this->psql->from('signers');
+        $query = $this->psql->get();
+        $count = $query->num_rows();
+        return $count;
+    }
+
 }
