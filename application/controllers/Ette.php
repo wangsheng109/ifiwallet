@@ -57,9 +57,11 @@ class Ette extends MY_Controller {
                 $block = $this->get_block($blockNumber);
                 $data['blockNumber'] = $blockNumber;
                 $data['timestamp'] = base_convert($block['timestamp'],16,10);
+                
                 $where['hash'] = $v['hash'];
                 $this->ette_model->update_tx_by_hash($data,$where);
                 echo "\r\n update tx ".$v['hash']." with new blocknumber: ".$data['blockNumber']." and timestamp: ".$data['timestamp']."\r\n";
+                
             }
         }
 
@@ -96,7 +98,7 @@ class Ette extends MY_Controller {
                         'gasused'   =>  base_convert($block['gasUsed'],16,10),
                         'gaslimit'  =>  base_convert($block['gasLimit'],16,10),
                         'nonce' =>  base_convert($block['nonce'],16,10),
-                        'miner' =>  '0x0000000000000000000000000000000000000000',  // TO DO, in POA it is signer
+                        'miner' =>  $this->get_signers($blockNum),  // TO DO, in POA it is signer
                         'size'  =>  base_convert($block['size'],16,10),
                         'stateroothash' =>  $block['stateRoot'],
                         'unclehash' =>  $block['sha3Uncles'],
@@ -112,6 +114,7 @@ class Ette extends MY_Controller {
                     if($has_block !== $block['hash']) {
                         $blockUpdate['hash'] = $block['hash'];
                         $blockUpdate['tx_num'] = count($block['transactions']);
+                        $blockUpdate['miner'] = $this->get_signers($blockNum);
                         $blockWhere['number'] = $blockNum;
                         $this->ette_model->update_block($blockUpdate,$blockWhere);
                         echo "\r\n block with hash ".$block['hash']." updated to db\r\n";
@@ -186,12 +189,8 @@ class Ette extends MY_Controller {
             $method  = "clique_getSigners";
             $param = ['0x'.dechex($num)];
             $result = $this->call($method,$param);
-            var_dump($result);
-            // if(is_array($result)){
-            //     exit("\r\n error when getting nonce \r\n");
-            // }
-            // $count = hexdec($result);
-            // return $count;
+            $random_num = rand(0,count($result)-1);
+            return $result[$random_num];
         }
 
         public function get_nonce($address) {
