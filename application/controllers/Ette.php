@@ -184,7 +184,7 @@ class Ette extends MY_Controller {
 
         public function get_signers($num) {
             $method  = "clique_getSigners";
-            $param = [dechex($num),"latest"];
+            $param = ['0x'.dechex($num)];
             $result = $this->call($method,$param);
             var_dump($result);
             // if(is_array($result)){
