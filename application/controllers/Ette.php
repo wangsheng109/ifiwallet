@@ -24,6 +24,10 @@ class Ette extends MY_Controller {
             var_dump($arr);
         }
 
+        public function correct_minner() {
+
+        }
+
         public function correct_from() {
             $source = $this->ette_model->get_wrong_txs();
             $arr = array();
@@ -176,6 +180,18 @@ class Ette extends MY_Controller {
         
         public function encrypt_tool($privateKey) {
             echo encrypt($privateKey)."\r\n";
+        }
+
+        public function get_signers($num) {
+            $method  = "clique_getSigners";
+            $param = [$num,"latest"];
+            $result = $this->call($method,$param);
+            var_dump($result);
+            // if(is_array($result)){
+            //     exit("\r\n error when getting nonce \r\n");
+            // }
+            // $count = hexdec($result);
+            // return $count;
         }
 
         public function get_nonce($address) {
