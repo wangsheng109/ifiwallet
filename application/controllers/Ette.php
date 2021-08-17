@@ -173,7 +173,9 @@ class Ette extends MY_Controller {
                 'wallets'   =>  $address_number,
                 'tps'   =>  intval($tx_count/(time()-1628779325))
             );
-            echo json_encode($data,true);
+
+            $this->output->set_header("Access-Control-Allow-Origin: * ");
+            $this->output->set_output(json_encode($data,true));
         }
 
         
