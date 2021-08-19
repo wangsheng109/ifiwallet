@@ -24,10 +24,6 @@ class Ette extends MY_Controller {
             var_dump($arr);
         }
 
-        public function correct_minner() {
-
-        }
-
         public function correct_from() {
             $source = $this->ette_model->get_wrong_txs();
             $arr = array();
@@ -178,6 +174,16 @@ class Ette extends MY_Controller {
             $this->output->set_output(json_encode($data,true));
         }
 
+        public function get_transactions() {
+            $best_block = $this->get_best_block();
+            $input_data = json_decode(trim(file_get_contents('php://input')), true);
+            $max_block = isset($input_data['max_block'])?$input_data['max_block']:$best_block;
+            $current_page = isset($input_data['current_page'])?$input_data['current_page']:1;
+            $items_per_page = isset($input_data['items_per_page'])?$input_data['items_per_page']:15;
+            $data = $this->ette_model->get_trx($max_block,$current_page,$items_per_page);
+            $this->output->set_header("Access-Control-Allow-Origin: * ");
+            $this->output->set_output(json_encode($data));
+        }
         
         public function decrypt_tool() {
             echo decrypt($this->config->item('test_private_key'))."\r\n";

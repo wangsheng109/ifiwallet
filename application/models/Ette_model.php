@@ -78,6 +78,16 @@ class Ette_model extends CI_Model {
         $this->psql->insert('transactions', $data);
     }
 
+    public function get_trx($max_block,$current_page,$items_per_page) {
+        $start = ($current_page-1)*$items_per_page;
+        $this->psql->select('hash,from,to,value,input_data,gas,gasprice,cost,nonce,state,blockhash,blockNumber,timestamp');
+        $this->psql->from('transactions');
+        $this->psql->where('blockNumber <=', $max_block);
+        $this->psql->limit($items_per_page,$start);
+        $query = $this->psql->get();
+        return $query->result_array();
+    }
+
     public function update_block($data, $where) {
         $this->psql->update('blocks',$data,$where);
     }
