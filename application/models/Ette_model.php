@@ -88,11 +88,22 @@ class Ette_model extends CI_Model {
         return $query->result_array();
     }
 
-    public function get_signers()
+    public function get_signers($current_page,$items_per_page)
     {
+        $start = ($current_page-1)*$items_per_page;
         $this->psql->select('*');
         $this->psql->from('signers');
-        $this->psql->limit(20);
+        $this->psql->limit($items_per_page,$start);
+        $query = $this->psql->get();
+        return $query->result_array();
+    }
+
+    public function get_nodes($current_page,$items_per_page)
+    {
+        $start = ($current_page-1)*$items_per_page;
+        $this->psql->select('*');
+        $this->psql->from('nodes');
+        $this->psql->limit($items_per_page,$start);
         $query = $this->psql->get();
         return $query->result_array();
     }

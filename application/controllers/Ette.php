@@ -205,7 +205,10 @@ class Ette extends MY_Controller {
         }
 
         public function get_common_signers() {
-            $signers = $this->ette_model->get_signers();
+            $input_data = json_decode(trim(file_get_contents('php://input')), true);
+            $current_page = isset($input_data['current_page'])?$input_data['current_page']:1;
+            $items_per_page = isset($input_data['items_per_page'])?$input_data['items_per_page']:15;
+            $signers = $this->ette_model->get_signers($current_page,$items_per_page);
             foreach($signers as $k => $v) {
                 $m_block = $this->ette_model->get_signer_m_block($v['address']);
                 $signers[$k]['min_block'] = $m_block->min_number; 
@@ -218,6 +221,24 @@ class Ette extends MY_Controller {
             }
             $this->output->set_header("Access-Control-Allow-Origin: * ");
             $this->output->set_output(json_encode($signers,true));
+        }
+
+        //获取节点位置
+        public function get_nodes_location() {
+            $input_data = json_decode(trim(file_get_contents('php://input')), true);
+            $current_page = isset($input_data['current_page'])?$input_data['current_page']:1;
+            $items_per_page = isset($input_data['items_per_page'])?$input_data['items_per_page']:15;
+            $nodes = $this->ette_model->get_nodes($current_page,$items_per_page);
+            foreach($nodes as $k => $v) {
+                $local_ip = $v['local_ip'];
+                $url = "http://api.ipstack.com/".$local_ip."?access_key=f03837ea28b5f80f3229d75382fec415&format=1";
+                $result = commit_curl($url);
+                $arr = json_decode($result,true);
+                $nodes[$k]['latitude'] = $arr['latitude'];
+                $nodes[$k]['longitude'] = $arr['longitude'];
+            }
+            $this->output->set_header("Access-Control-Allow-Origin: * ");
+            $this->output->set_output(json_encode($nodes,true));
         }
 
         public function get_nonce($address) {
