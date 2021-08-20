@@ -181,8 +181,11 @@ class Ette extends MY_Controller {
             $current_page = isset($input_data['current_page'])?$input_data['current_page']:1;
             $items_per_page = isset($input_data['items_per_page'])?$input_data['items_per_page']:15;
             $data = $this->ette_model->get_trx($max_block,$current_page,$items_per_page);
+            foreach($data as $k => $v) {
+                $data[$k]['age'] = time()-$v['timestamp'];
+            }
             $this->output->set_header("Access-Control-Allow-Origin: * ");
-            $this->output->set_output(json_encode($data));
+            $this->output->set_output(json_encode($data,true));
         }
         
         public function decrypt_tool() {
@@ -199,6 +202,22 @@ class Ette extends MY_Controller {
             $result = $this->call($method,$param);
             $random_num = rand(0,count($result)-1);
             return $result[$random_num];
+        }
+
+        public function get_common_signers() {
+            $signers = $this->ette_model->get_signers();
+            foreach($signers as $k => $v) {
+                $m_block = $this->ette_model->get_signer_m_block($v['address']);
+                $signers[$k]['min_block'] = $m_block->min_number; 
+                $signers[$k]['max_block'] = $m_block->max_number; 
+                //get blocks numbers in time period
+                $seven_days = $this->ette_model->get_blocks_count_by_singer_time(time()-7*24*3600,$v['address']);
+                $one_month = $this->ette_model->get_blocks_count_by_singer_time(time()-30*24*3600,$v['address']);
+                $signers[$k]['7days'] = $seven_days;
+                $signers[$k]['30days'] = $one_month;
+            }
+            $this->output->set_header("Access-Control-Allow-Origin: * ");
+            $this->output->set_output(json_encode($signers,true));
         }
 
         public function get_nonce($address) {

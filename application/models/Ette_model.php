@@ -88,6 +88,32 @@ class Ette_model extends CI_Model {
         return $query->result_array();
     }
 
+    public function get_signers()
+    {
+        $this->psql->select('*');
+        $this->psql->from('signers');
+        $this->psql->limit(20);
+        $query = $this->psql->get();
+        return $query->result_array();
+    }
+
+    public function get_signer_m_block($signer) {
+        $this->psql->select('MAX(number) as max_number, MIN(number) as min_number');
+        $this->psql->from('blocks');
+        $this->psql->where('miner',$signer);
+        $query = $this->psql->get();
+        return $query->row();
+    }
+
+    public function get_blocks_count_by_singer_time($start_time,$signer) {
+        $this->psql->select('number');
+        $this->psql->from('blocks');
+        $this->psql->where(['miner'=>$signer,'time >=' => $start_time]);
+        $query = $this->psql->get();
+        $count = $query->num_rows();
+        return $count;
+    } 
+
     public function update_block($data, $where) {
         $this->psql->update('blocks',$data,$where);
     }
