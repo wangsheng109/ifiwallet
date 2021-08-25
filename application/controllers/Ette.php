@@ -180,12 +180,17 @@ class Ette extends MY_Controller {
             $max_block = isset($input_data['max_block'])?$input_data['max_block']:$best_block;
             $current_page = isset($input_data['current_page'])?$input_data['current_page']:1;
             $items_per_page = isset($input_data['items_per_page'])?$input_data['items_per_page']:15;
-            $data = $this->ette_model->get_trx($max_block,$current_page,$items_per_page);
+            $res = $this->ette_model->get_trx($max_block,$current_page,$items_per_page);
+            $data = $res[1];
             foreach($data as $k => $v) {
                 $data[$k]['age'] = time()-$v['timestamp'];
             }
+            $result = array(
+                'total_records' =>  $res[0],
+                'data'  =>  $data
+            );
             $this->output->set_header("Access-Control-Allow-Origin: * ");
-            $this->output->set_output(json_encode($data,true));
+            $this->output->set_output(json_encode($result,true));
         }
         
         public function decrypt_tool() {
@@ -226,7 +231,9 @@ class Ette extends MY_Controller {
             $input_data = json_decode(trim(file_get_contents('php://input')), true);
             $current_page = isset($input_data['current_page'])?$input_data['current_page']:1;
             $items_per_page = isset($input_data['items_per_page'])?$input_data['items_per_page']:15;
-            $signers = $this->ette_model->get_signers($current_page,$items_per_page);
+            $res = $this->ette_model->get_signers($current_page,$items_per_page);
+            $signers['total_records']   =   $res[0];
+            $signers['data']    =   $res[1];
             $this->output->set_header("Access-Control-Allow-Origin: * ");
             $this->output->set_output(json_encode($signers,true));
         }
@@ -236,12 +243,15 @@ class Ette extends MY_Controller {
             $input_data = json_decode(trim(file_get_contents('php://input')), true);
             $current_page = isset($input_data['current_page'])?$input_data['current_page']:1;
             $items_per_page = isset($input_data['items_per_page'])?$input_data['items_per_page']:15;
-            $all_blocks = $this->ette_model->get_all_blocks($current_page,$items_per_page);
+            $res = $this->ette_model->get_all_blocks($current_page,$items_per_page);
+            $all_blocks =   $res[1];
             foreach($all_blocks as $k => $v) {
                 $all_blocks[$k]['age'] = time() - $v['time'];
             }
+            $data['total_records']  =   $res[0];
+            $data['data']   =   $all_blocks;
             $this->output->set_header("Access-Control-Allow-Origin: * ");
-            $this->output->set_output(json_encode($all_blocks,true));
+            $this->output->set_output(json_encode($data,true));
         }
 
         //获取节点所签名的区块
@@ -250,12 +260,17 @@ class Ette extends MY_Controller {
             $address = isset($input_data['address'])?$input_data['address']:"0x";
             $current_page = isset($input_data['current_page'])?$input_data['current_page']:1;
             $items_per_page = isset($input_data['items_per_page'])?$input_data['items_per_page']:15;
-            $signed_blocks = $this->ette_model->get_signed_blocks($current_page,$items_per_page,$address);
+            $res = $this->ette_model->get_signed_blocks($current_page,$items_per_page,$address);
+            $signed_blocks = $res[1];
             foreach($signed_blocks as $k => $v) {
                 $signed_blocks[$k]['age'] = time() - $v['time'];
             }
+            $data = array(
+                'total_records' =>  $res[0],
+                'data'  =>  $signed_blocks
+            );
             $this->output->set_header("Access-Control-Allow-Origin: * ");
-            $this->output->set_output(json_encode($signed_blocks,true));
+            $this->output->set_output(json_encode($data,true));
         }
 
         //获取节点交易
@@ -264,12 +279,17 @@ class Ette extends MY_Controller {
             $address = isset($input_data['address'])?$input_data['address']:"0x";
             $current_page = isset($input_data['current_page'])?$input_data['current_page']:1;
             $items_per_page = isset($input_data['items_per_page'])?$input_data['items_per_page']:15;
-            $add_trx = $this->ette_model->get_add_trx($current_page,$items_per_page,$address);
+            $res = $this->ette_model->get_add_trx($current_page,$items_per_page,$address);
+            $add_trx    =   $res[1];
             foreach($add_trx as $k => $v) {
                 $add_trx[$k]['age'] = time() - $v['timestamp'];
             }
+            $data = array(
+                "total_records" =>  $res[0],
+                "data"  =>  $add_trx
+            );
             $this->output->set_header("Access-Control-Allow-Origin: * ");
-            $this->output->set_output(json_encode($add_trx,true));
+            $this->output->set_output(json_encode($data,true));
         }
 
         //获取节点位置
@@ -277,7 +297,8 @@ class Ette extends MY_Controller {
             $input_data = json_decode(trim(file_get_contents('php://input')), true);
             $current_page = isset($input_data['current_page'])?$input_data['current_page']:1;
             $items_per_page = isset($input_data['items_per_page'])?$input_data['items_per_page']:15;
-            $nodes = $this->ette_model->get_nodes($current_page,$items_per_page);
+            $res = $this->ette_model->get_nodes($current_page,$items_per_page);
+            $nodes = $res[1];
             foreach($nodes as $k => $v) {
                 $local_ip = $v['local_ip'];
                 $url = "http://api.ipstack.com/".$local_ip."?access_key=f03837ea28b5f80f3229d75382fec415&format=1";
@@ -286,8 +307,10 @@ class Ette extends MY_Controller {
                 $nodes[$k]['latitude'] = $arr['latitude'];
                 $nodes[$k]['longitude'] = $arr['longitude'];
             }
+            $data['total_records']  =   $res[0];
+            $data['data']   =   $nodes;
             $this->output->set_header("Access-Control-Allow-Origin: * ");
-            $this->output->set_output(json_encode($nodes,true));
+            $this->output->set_output(json_encode($data,true));
         }
 
         //更新节点数据

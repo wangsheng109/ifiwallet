@@ -78,15 +78,20 @@ class Ette_model extends CI_Model {
         $this->psql->insert('transactions', $data);
     }
 
-    public function get_trx($max_block,$current_page,$items_per_page) {
+    public function get_trx($max_block,$current_page,$items_per_page=0) {
         $start = ($current_page-1)*$items_per_page;
+        $this->psql->select('hash,from,to,value,input_data,gas,gasprice,cost,nonce,state,blockhash,blockNumber,timestamp');
+        $this->psql->from('transactions');
+        $this->psql->where('blockNumber <=', $max_block);
+        $data[0] = $this->psql->get()->num_rows();
         $this->psql->select('hash,from,to,value,input_data,gas,gasprice,cost,nonce,state,blockhash,blockNumber,timestamp');
         $this->psql->from('transactions');
         $this->psql->where('blockNumber <=', $max_block);
         $this->psql->order_by("timestamp", "desc");
         $this->psql->limit($items_per_page,$start);
         $query = $this->psql->get();
-        return $query->result_array();
+        $data[1]    =   $query->result_array();
+        return $data;
     }
 
     public function get_signers($current_page=1,$items_per_page=0)
@@ -94,11 +99,14 @@ class Ette_model extends CI_Model {
         $start = ($current_page-1)*$items_per_page;
         $this->psql->select('*');
         $this->psql->from('signers');
+        $data[0]    =   $this->psql->get()->num_rows();
+        $this->psql->select('*');
+        $this->psql->from('signers');
         if($items_per_page>0) {
             $this->psql->limit($items_per_page,$start);
         }
-        $query = $this->psql->get();
-        return $query->result_array();
+        $data[1] = $this->psql->get()->result_array();
+        return $data;
     }
     public function update_signers($data, $where) {
         $this->psql->update('signers',$data,$where);
@@ -111,12 +119,17 @@ class Ette_model extends CI_Model {
         $this->psql->from('transactions');
         $this->psql->where('from',$address);
         $this->psql->or_where('to',$address);
+        $data[0]    =   $this->psql->get()->num_rows();
         $this->psql->order_by("timestamp", "desc");
+        $this->psql->select('hash,blockNumber,timestamp,from,to,state');
+        $this->psql->from('transactions');
+        $this->psql->where('from',$address);
+        $this->psql->or_where('to',$address);
         if($items_per_page>0){
             $this->psql->limit($items_per_page,$start);
         }
-        $query = $this->psql->get();
-        return $query->result_array();
+        $data[1] = $this->psql->get()->result_array();
+        return $data;
     }
 
 
@@ -126,11 +139,15 @@ class Ette_model extends CI_Model {
         $this->psql->select('hash,number,time,difficulty,tx_num,size,miner');
         $this->psql->from('blocks');
         $this->psql->order_by('time','desc');
+        $data[0]    =   $this->psql->get()->num_rows();
+        $this->psql->select('hash,number,time,difficulty,tx_num,size,miner');
+        $this->psql->from('blocks');
+        $this->psql->order_by('time','desc');
         if($items_per_page>0){
             $this->psql->limit($items_per_page,$start);
         }
-        $query = $this->psql->get();
-        return $query->result_array();
+        $data[1]    = $this->psql->get()->result_array();
+        return $data;
     }
 
     public function get_signed_blocks($current_page=1,$items_per_page=0,$address)
@@ -139,12 +156,16 @@ class Ette_model extends CI_Model {
         $this->psql->select('hash,number,time,difficulty,tx_num,size,miner');
         $this->psql->from('blocks');
         $this->psql->where('miner',$address);
+        $data[0]    =   $this->psql->get()->num_rows();
         $this->psql->order_by('time','desc');
         if($items_per_page>0){
             $this->psql->limit($items_per_page,$start);
         }
-        $query = $this->psql->get();
-        return $query->result_array();
+        $this->psql->select('hash,number,time,difficulty,tx_num,size,miner');
+        $this->psql->from('blocks');
+        $this->psql->where('miner',$address);
+        $data[1] = $this->psql->get()->result_array();
+        return $data;
     }
 
     public function get_nodes($current_page=1,$items_per_page=0)
@@ -152,11 +173,14 @@ class Ette_model extends CI_Model {
         $start = ($current_page-1)*$items_per_page;
         $this->psql->select('*');
         $this->psql->from('nodes');
+        $data[0]    =   $this->psql->get()->num_rows();
+        $this->psql->select('*');
+        $this->psql->from('nodes');
         if($items_per_page>0){
             $this->psql->limit($items_per_page,$start);
         }
-        $query = $this->psql->get();
-        return $query->result_array();
+        $data[1] = $this->psql->get()->result_array();
+        return $data;
     }
 
     public function insert_award_log($data) {
