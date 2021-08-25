@@ -72,7 +72,15 @@ class Irc20 extends MY_Controller {
             $from = $this->config->item("ifiPayAccount");
             $fromPri = decrypt($this->config->item("encrypted_ifi_wallet"));
             $contract = "0x4D2f63d6826603B84D12C1C7dd33aB7F3BDe7553";
-            $tx_res = $this->send_token($this->add_random($cpu_score),$from,$fromPri,$contract,$owner_address);
+            $ifi_amount = $this->add_random($cpu_score);
+            $tx_res = $this->send_token($ifi_amount,$from,$fromPri,$contract,$owner_address);
+            $data = array(
+                'node_address'  =>  $owner_address,
+                'ifi_amount'    =>  base_convert($ifi_amount,16,10),
+                'timestamp'     =>  time(),
+                'tx_hash'       =>  $tx_res
+            );
+            $this->ette_model->insert_award_log($data);
             echo "\r\n send ifi sucessfully with tx hash : ".$tx_res."\r\n";
 
         }

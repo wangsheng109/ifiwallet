@@ -83,29 +83,84 @@ class Ette_model extends CI_Model {
         $this->psql->select('hash,from,to,value,input_data,gas,gasprice,cost,nonce,state,blockhash,blockNumber,timestamp');
         $this->psql->from('transactions');
         $this->psql->where('blockNumber <=', $max_block);
+        $this->psql->order_by("timestamp", "desc");
         $this->psql->limit($items_per_page,$start);
         $query = $this->psql->get();
         return $query->result_array();
     }
 
-    public function get_signers($current_page,$items_per_page)
+    public function get_signers($current_page=1,$items_per_page=0)
     {
         $start = ($current_page-1)*$items_per_page;
         $this->psql->select('*');
         $this->psql->from('signers');
-        $this->psql->limit($items_per_page,$start);
+        if($items_per_page>0) {
+            $this->psql->limit($items_per_page,$start);
+        }
+        $query = $this->psql->get();
+        return $query->result_array();
+    }
+    public function update_signers($data, $where) {
+        $this->psql->update('signers',$data,$where);
+    }
+
+    public function get_add_trx($current_page=1,$items_per_page=0,$address)
+    {
+        $start = ($current_page-1)*$items_per_page;
+        $this->psql->select('hash,blockNumber,timestamp,from,to,state');
+        $this->psql->from('transactions');
+        $this->psql->where('from',$address);
+        $this->psql->or_where('to',$address);
+        $this->psql->order_by("timestamp", "desc");
+        if($items_per_page>0){
+            $this->psql->limit($items_per_page,$start);
+        }
         $query = $this->psql->get();
         return $query->result_array();
     }
 
-    public function get_nodes($current_page,$items_per_page)
+
+    public function get_all_blocks($current_page=1,$items_per_page=0)
+    {
+        $start = ($current_page-1)*$items_per_page;
+        $this->psql->select('hash,number,time,difficulty,tx_num,size,miner');
+        $this->psql->from('blocks');
+        $this->psql->order_by('time','desc');
+        if($items_per_page>0){
+            $this->psql->limit($items_per_page,$start);
+        }
+        $query = $this->psql->get();
+        return $query->result_array();
+    }
+
+    public function get_signed_blocks($current_page=1,$items_per_page=0,$address)
+    {
+        $start = ($current_page-1)*$items_per_page;
+        $this->psql->select('hash,number,time,difficulty,tx_num,size,miner');
+        $this->psql->from('blocks');
+        $this->psql->where('miner',$address);
+        $this->psql->order_by('time','desc');
+        if($items_per_page>0){
+            $this->psql->limit($items_per_page,$start);
+        }
+        $query = $this->psql->get();
+        return $query->result_array();
+    }
+
+    public function get_nodes($current_page=1,$items_per_page=0)
     {
         $start = ($current_page-1)*$items_per_page;
         $this->psql->select('*');
         $this->psql->from('nodes');
-        $this->psql->limit($items_per_page,$start);
+        if($items_per_page>0){
+            $this->psql->limit($items_per_page,$start);
+        }
         $query = $this->psql->get();
         return $query->result_array();
+    }
+
+    public function insert_award_log($data) {
+        $this->psql->insert('ifi_award_log',$data);
     }
 
     public function get_signer_m_block($signer) {
@@ -123,7 +178,18 @@ class Ette_model extends CI_Model {
         $query = $this->psql->get();
         $count = $query->num_rows();
         return $count;
+    }
+    
+    public function get_award_by_node_time($start_time,$node) {
+        $this->psql->select('SUM(ifi_amount) as sum_amount');
+        $this->psql->where(['node_address'=>$node,'timestamp >=' => $start_time]);
+        $res = $this->psql->get('ifi_award_log')->row();
+        return $res->sum_amount;
     } 
+
+    public function update_node($data, $where) {
+        $this->psql->update('nodes',$data,$where);
+    }
 
     public function update_block($data, $where) {
         $this->psql->update('blocks',$data,$where);

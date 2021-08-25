@@ -204,23 +204,72 @@ class Ette extends MY_Controller {
             return $result[$random_num];
         }
 
+        public function update_common_signers() {
+            $signers = $this->ette_model->get_signers();
+            foreach($signers as $k => $v) {
+                $m_block = $this->ette_model->get_signer_m_block($v['address']);
+                $data['min_block'] = $m_block->min_number; 
+                $data['max_block'] = $m_block->max_number; 
+                //get blocks numbers in time period
+                $seven_days = $this->ette_model->get_blocks_count_by_singer_time(time()-7*24*3600,$v['address']);
+                $one_month = $this->ette_model->get_blocks_count_by_singer_time(time()-30*24*3600,$v['address']);
+                $total_blocks = $this->ette_model->get_blocks_count_by_singer_time(0,$v['address']);
+                $data['days7'] = $seven_days;
+                $data['days30'] = $one_month;
+                $data['total_blocks'] = $total_blocks;
+                $this->ette_model->update_signers($data,array('address' =>  $v['address']));
+                echo "\r\n update signer :". $v['address']."\r\n";
+            }
+        }
+
         public function get_common_signers() {
             $input_data = json_decode(trim(file_get_contents('php://input')), true);
             $current_page = isset($input_data['current_page'])?$input_data['current_page']:1;
             $items_per_page = isset($input_data['items_per_page'])?$input_data['items_per_page']:15;
             $signers = $this->ette_model->get_signers($current_page,$items_per_page);
-            foreach($signers as $k => $v) {
-                $m_block = $this->ette_model->get_signer_m_block($v['address']);
-                $signers[$k]['min_block'] = $m_block->min_number; 
-                $signers[$k]['max_block'] = $m_block->max_number; 
-                //get blocks numbers in time period
-                $seven_days = $this->ette_model->get_blocks_count_by_singer_time(time()-7*24*3600,$v['address']);
-                $one_month = $this->ette_model->get_blocks_count_by_singer_time(time()-30*24*3600,$v['address']);
-                $signers[$k]['7days'] = $seven_days;
-                $signers[$k]['30days'] = $one_month;
-            }
             $this->output->set_header("Access-Control-Allow-Origin: * ");
             $this->output->set_output(json_encode($signers,true));
+        }
+
+        //获取区块带分野
+        public function get_blocks() {
+            $input_data = json_decode(trim(file_get_contents('php://input')), true);
+            $current_page = isset($input_data['current_page'])?$input_data['current_page']:1;
+            $items_per_page = isset($input_data['items_per_page'])?$input_data['items_per_page']:15;
+            $all_blocks = $this->ette_model->get_all_blocks($current_page,$items_per_page);
+            foreach($all_blocks as $k => $v) {
+                $all_blocks[$k]['age'] = time() - $v['time'];
+            }
+            $this->output->set_header("Access-Control-Allow-Origin: * ");
+            $this->output->set_output(json_encode($all_blocks,true));
+        }
+
+        //获取节点所签名的区块
+        public function get_signed_blocks() {
+            $input_data = json_decode(trim(file_get_contents('php://input')), true);
+            $address = isset($input_data['address'])?$input_data['address']:"0x";
+            $current_page = isset($input_data['current_page'])?$input_data['current_page']:1;
+            $items_per_page = isset($input_data['items_per_page'])?$input_data['items_per_page']:15;
+            $signed_blocks = $this->ette_model->get_signed_blocks($current_page,$items_per_page,$address);
+            foreach($signed_blocks as $k => $v) {
+                $signed_blocks[$k]['age'] = time() - $v['time'];
+            }
+            $this->output->set_header("Access-Control-Allow-Origin: * ");
+            $this->output->set_output(json_encode($signed_blocks,true));
+        }
+
+        //获取节点交易
+        public function get_address_trx() {
+            $input_data = json_decode(trim(file_get_contents('php://input')), true);
+            $address = isset($input_data['address'])?$input_data['address']:"0x";
+            $current_page = isset($input_data['current_page'])?$input_data['current_page']:1;
+            $items_per_page = isset($input_data['items_per_page'])?$input_data['items_per_page']:15;
+            $add_trx = $this->ette_model->get_add_trx($current_page,$items_per_page,$address);
+            foreach($add_trx as $k => $v) {
+                $add_trx[$k]['age'] = time() - $v['timestamp'];
+            }
+            $this->output->set_header("Access-Control-Allow-Origin: * ");
+            $this->output->set_output(json_encode($add_trx,true));
         }
 
         //获取节点位置
@@ -239,6 +288,31 @@ class Ette extends MY_Controller {
             }
             $this->output->set_header("Access-Control-Allow-Origin: * ");
             $this->output->set_output(json_encode($nodes,true));
+        }
+
+        //更新节点数据
+        public function update_nodes_info() {
+            $nodes = $this->ette_model->get_nodes();
+            foreach($nodes as $v) {
+                $total_award = $this->ette_model->get_award_by_node_time(0,$v['owner_address']);
+                $day30_award = $this->ette_model->get_award_by_node_time(time()-30*24*3600,$v['owner_address']);
+                $day60_award = $this->ette_model->get_award_by_node_time(time()-60*24*3600,$v['owner_address']);
+                $last30_award = $day60_award - $day30_award;
+                $increase_ratio =   0;
+                if($last30_award == 0) {
+                    $increase_ratio = 100;
+                } else {
+                    $increase_ratio = 100*($day30_award - $last30_award)/$last30_award;
+                }
+                // update nodes information
+                $data = array(
+                    'total_reward'  =>  $total_award,
+                    'reward_30days' =>  $day30_award,
+                    'increase_ratio'   =>  $increase_ratio
+                );
+                $this->ette_model->update_node($data,array('owner_address'=>$v['owner_address']));
+                echo "\r\n Update node information on onwer address : ".$v['owner_address']."\r\n";
+            }
         }
 
         public function get_nonce($address) {
