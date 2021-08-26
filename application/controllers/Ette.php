@@ -292,6 +292,27 @@ class Ette extends MY_Controller {
             $this->output->set_output(json_encode($data,true));
         }
 
+        //获取地址类型
+        public function get_address_type()  {
+            $input_data = json_decode(trim(file_get_contents('php://input')), true);
+            $address = isset($input_data['address'])?$input_data['address']:"0x";
+            $is_s = $this->ette_model->check_s($address);
+            $data = array();
+            if($is_s) {
+                $data['type']   =   's';
+                
+            } else {
+                $is_c = $this->ette_model->check_n($address);
+                if($is_c) {
+                    $data['type']   =   'c';
+                } else {
+                    $data['type']   =   'n';
+                }
+            }
+            $this->output->set_header("Access-Control-Allow-Origin: * ");
+            $this->output->set_output(json_encode($data,true));
+        }
+
         //获取节点位置
         public function get_nodes_location() {
             $input_data = json_decode(trim(file_get_contents('php://input')), true);

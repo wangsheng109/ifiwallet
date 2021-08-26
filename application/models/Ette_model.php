@@ -115,7 +115,7 @@ class Ette_model extends CI_Model {
     public function get_add_trx($current_page=1,$items_per_page=0,$address)
     {
         $start = ($current_page-1)*$items_per_page;
-        $this->psql->select('hash,blockNumber,timestamp,from,to,state');
+        $this->psql->select('hash');
         $this->psql->from('transactions');
         $this->psql->where('from',$address);
         $this->psql->or_where('to',$address);
@@ -136,10 +136,10 @@ class Ette_model extends CI_Model {
     public function get_all_blocks($current_page=1,$items_per_page=0)
     {
         $start = ($current_page-1)*$items_per_page;
-        $this->psql->select('hash,number,time,difficulty,tx_num,size,miner');
+        $this->psql->select('max(number) as big_block');
         $this->psql->from('blocks');
         $this->psql->order_by('time','desc');
-        $data[0]    =   $this->psql->get()->num_rows();
+        $data[0]    =  $this->psql->get()->row()->big_block;
         $this->psql->select('hash,number,time,difficulty,tx_num,size,miner');
         $this->psql->from('blocks');
         $this->psql->order_by('time','desc');
@@ -167,7 +167,34 @@ class Ette_model extends CI_Model {
         $data[1] = $this->psql->get()->result_array();
         return $data;
     }
+    // check if address is signer
+    public function check_s($address)
+    {
+        $this->psql->select('id');
+        $this->psql->from('signers');
+        $this->psql->where('address',$address);
+        $count = $this->psql->get()->num_rows();
+        if($count > 0){
+            return true;
+        } else {
+            return false;
+        }
+    }
 
+    // check if address is common node address
+    public function check_n($address)
+    {
+        $this->psql->select('id');
+        $this->psql->from('nodes');
+        $this->psql->where('owner_address',$address);
+        $this->psql->or_where('chequebook_address',$address);
+        $count = $this->psql->get()->num_rows();
+        if($count > 0){
+            return true;
+        } else {
+            return false;
+        }
+    }
     public function get_nodes($current_page=1,$items_per_page=0)
     {
         $start = ($current_page-1)*$items_per_page;
