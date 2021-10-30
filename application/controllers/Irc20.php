@@ -65,7 +65,8 @@ class Irc20 extends MY_Controller {
                 'owner_address' =>  $owner_address,
                 'cpu_name'    =>  $cpu_name,
                 'cpu_score' =>  $cpu_score,
-                'local_ip'  =>  $local_ip
+                'local_ip'  =>  $local_ip,
+                'last_updated' => date('Y-m-d H:i:s')
             );
             $this->ette_model->set_node($data, $owner_address);
             // send ifi
@@ -94,7 +95,8 @@ class Irc20 extends MY_Controller {
             $data = array(
                 'owner_address' =>  $owner_address,
                 'chequebook_address'    =>  $chequebook_address,
-                'local_ip'  =>  $local_ip
+                'local_ip'  =>  $local_ip,
+                'last_updated' => date('Y-m-d H:i:s')
             );
             $this->ette_model->set_node($data, $owner_address);
             echo "\r\n register/update the node at the init \r\n";
