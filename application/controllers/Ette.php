@@ -211,7 +211,7 @@ class Ette extends MY_Controller {
 
         public function update_common_signers() {
             $signers = $this->ette_model->get_signers();
-            foreach($signers as $k => $v) {
+            foreach($signers[1] as $k => $v) {
                 $m_block = $this->ette_model->get_signer_m_block($v['address']);
                 $data['min_block'] = $m_block->min_number; 
                 $data['max_block'] = $m_block->max_number; 
