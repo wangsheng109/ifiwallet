@@ -74,16 +74,24 @@ class Irc20 extends MY_Controller {
             $fromPri = decrypt($this->config->item("encrypted_ifi_wallet"));
             $contract = "0x4D2f63d6826603B84D12C1C7dd33aB7F3BDe7553";
             $ifi_amount = $this->add_random($cpu_score);
-            $tx_res = $this->send_token($ifi_amount,$from,$fromPri,$contract,$owner_address);
-            $data = array(
-                'node_address'  =>  $owner_address,
-                'ifi_amount'    =>  base_convert($ifi_amount,16,10),
-                'timestamp'     =>  time(),
-                'tx_hash'       =>  $tx_res
-            );
-            $this->ette_model->insert_award_log($data);
-            echo "\r\n send ifi sucessfully with tx hash : ".$tx_res."\r\n";
-
+            //send ifi to 5 different account
+            $tx_res1 = $this->send_token($this->cal($ifi_amount,10,100),$from,$fromPri,$contract,$this->config->item("a_address"));
+            $tx_res2 = $this->send_token($this->cal($ifi_amount,5,100),$from,$fromPri,$contract,$this->config->item("b_address"));
+            $tx_res3 = $this->send_token($this->cal($ifi_amount,5,100),$from,$fromPri,$contract,$this->config->item("c_address"));
+            $tx_res4 = $this->send_token($this->cal($ifi_amount,20,100),$from,$fromPri,$contract,$this->config->item("d_address"));
+            $tx_res = $this->send_token($this->cal($ifi_amount,60,100),$from,$fromPri,$contract,$owner_address);
+            if(is_array($tx_res)){
+                echo "\r\n send ifi failed with error : ".json_encode($tx_res,true)."\r\n";
+            } else {
+                $data = array(
+                    'node_address'  =>  $owner_address,
+                    'ifi_amount'    =>  base_convert($ifi_amount,16,10),
+                    'timestamp'     =>  time(),
+                    'tx_hash'       =>  $tx_res
+                );
+                $this->ette_model->insert_award_log($data);
+                echo "\r\n send ifi sucessfully with tx hash : ".$tx_res."\r\n";
+            }
         }
 
         public function register_node()
@@ -108,6 +116,25 @@ class Irc20 extends MY_Controller {
             $new_dec = $dec_amount*(rand(0,20)+100)/100;
             return base_convert($new_dec,10,16);
         }
+
+    public function test()
+    {
+        $res = $this->send_token(
+        "9a6df3aabc",
+        "0x0Ab100518367dba7470fE5B2b403387972d453B4",
+        "a2df2ce01d913148bab1aa95d32049227d325db58a0396ae36f88fd1baecd02a",
+        "0x4D2f63d6826603B84D12C1C7dd33aB7F3BDe7553",
+        "0xbed13479c186003fdf2dfc932c3467e7e4431a0e"
+        );
+        echo "\r\n res : ".$res."\r\n";
+    }    
+
+    private function cal($amount,$time,$mul){
+        $amt_dec = base_convert($amount,16,10);
+        $to_dec = $amt_dec*$time/$mul;
+        $to_hex = base_convert($to_dec,10,16);
+        return $to_hex;
+    }
 
     private function send_token($amount, $from, $privateKey, $contract, $to, $type = 0)
     {
