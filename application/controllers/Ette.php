@@ -116,6 +116,7 @@ class Ette extends MY_Controller {
                         echo "\r\n block with hash ".$block['hash']." updated to db\r\n";
                     } else {
                         $blockUpdate['miner'] = $this->get_signers($blockNum);
+                        $blockWhere['number'] = $blockNum;
                         $this->ette_model->update_block($blockUpdate,$blockWhere);
                         echo "\r\n block with hash ".$block['hash']." in db is correct, just update the miner \r\n";
                     }
