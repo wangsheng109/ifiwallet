@@ -116,6 +116,7 @@ class Ette extends MY_Controller {
                         echo "\r\n block with hash ".$block['hash']." updated to db\r\n";
                     } else {
                         $blockUpdate['miner'] = $this->get_signers($blockNum);
+                        $blockUpdate['tx_num'] = count($block['transactions']);
                         $blockWhere['number'] = $blockNum;
                         $this->ette_model->update_block($blockUpdate,$blockWhere);
                         echo "\r\n block with hash ".$block['hash']." in db is correct, just update the miner \r\n";
@@ -340,7 +341,8 @@ class Ette extends MY_Controller {
         //更新节点数据
         public function update_nodes_info() {
             $nodes = $this->ette_model->get_nodes();
-            foreach($nodes as $v) {
+            foreach($nodes[1] as $v) {
+                $incentive_reward =  $this->ette_model->get_incentive_reward($v['owner_address']);
                 $total_award = $this->ette_model->get_award_by_node_time(0,$v['owner_address']);
                 $day30_award = $this->ette_model->get_award_by_node_time(time()-30*24*3600,$v['owner_address']);
                 $day60_award = $this->ette_model->get_award_by_node_time(time()-60*24*3600,$v['owner_address']);
@@ -353,12 +355,13 @@ class Ette extends MY_Controller {
                 }
                 // update nodes information
                 $data = array(
+                    'incentive_reward'  =>  $incentive_reward,
                     'total_reward'  =>  $total_award,
                     'reward_30days' =>  $day30_award,
                     'increase_ratio'   =>  $increase_ratio
                 );
                 $this->ette_model->update_node($data,array('owner_address'=>$v['owner_address']));
-                echo "\r\n Update node information on onwer address : ".$v['owner_address']."\r\n";
+                echo "\r\n Update node information on owner address : ".$v['owner_address']."\r\n";
             }
         }
 

@@ -15,7 +15,7 @@ class Dam extends MY_Controller
 		$this->coin_name = "ifi";
 		$this->coin_id = $this->config->item('ifi_coin_id');
 		$this->chain_id = $this->config->item('ifi_chain_id');
-		$this->contract="0x4D2f63d6826603B84D12C1C7dd33aB7F3BDe7553";
+		$this->contract="0xB1F052E948A63b1c560D569BBd8501B6B6D0690a";
 	}
 
 
@@ -62,10 +62,10 @@ class Dam extends MY_Controller
 		}
 		$result=hexdec($result);//weiToifi(hexdec($result))
 		$this->psql = $this->load->database('ette',true);
-		$consume=0;
 		$reward=$this->psql->query("select ifnull(sum(cast(total_reward AS DECIMAL(30))),0) num from nodes where owner_address='".$address_org."'")->row_array()['num'];
 		$in=$this->psql->query("select IFNULL(SUM(cast(`value` AS DECIMAL(30))),0) num from transactions WHERE `to`='".$address_org."'")->row_array()['num'];
 		$out=$this->psql->query("select IFNULL(SUM(cast(`value` AS DECIMAL(30))),0) num from transactions WHERE `from`='".$address_org."'")->row_array()['num'];
+		$consume=$reward+$in-$out-$result;
 		$rdata=array('status'=>1,'msg'=>'',"balance"=>$result,'reward'=>$reward,'consume'=>$consume,'in'=>$in,'out'=>$out);
 		$this->output->set_output(json_encode($rdata,true));
 	}
@@ -155,6 +155,110 @@ class Dam extends MY_Controller
 			$out_arr['msg']='转账失败';
 		}
 		$this->output->set_output(json_encode($out_arr,true));
+	}
+
+	public function get_run_time() {
+		$run_time=0;
+		$current_run_time=0;
+		$input_data = json_decode(trim(file_get_contents('php://input')), true);
+		$address = isset($input_data['address'])?$input_data['address']:"";
+		$chequebook_address = isset($input_data['chequebook_address'])?$input_data['chequebook_address']:"";
+		$local_ip = isset($input_data['local_ip'])?$input_data['local_ip']:"";
+		if(!$address){
+			$this->output->set_output(json_encode(['status'=>0,'msg'=>'address can not empty'],true));
+			return;
+		}
+		if(!$chequebook_address){
+			$this->output->set_output(json_encode(['status'=>0,'msg'=>'chequebook_address can not empty'],true));
+			return;
+		}
+		if(!$local_ip){
+			$this->output->set_output(json_encode(['status'=>0,'msg'=>'local_ip can not empty'],true));
+			return;
+		}
+		$this->psql = $this->load->database('ette',true);
+		$result=$this->psql->query("SELECT TIMESTAMPDIFF(SECOND,(SELECT b.startup_time FROM nodes_startup b WHERE a.owner_address=b.owner_address and a.chequebook_address=b.chequebook_address and a.local_ip=b.local_ip order by b.startup_time ASC LIMIT 1),last_updated) run_time,TIMESTAMPDIFF(SECOND,(SELECT b.startup_time FROM nodes_startup b WHERE a.owner_address=b.owner_address and a.chequebook_address=b.chequebook_address and a.local_ip=b.local_ip order by b.startup_time DESC LIMIT 1),last_updated) c_run_time FROM nodes a WHERE owner_address='".$address."' and chequebook_address='".$chequebook_address."' and local_ip='".$local_ip."'")->row_array();
+		if($result&&count($result)>0){
+			$run_time=$result['run_time'];
+			$current_run_time=$result['c_run_time'];
+		}
+		$rdata=array('status'=>1,'msg'=>'','run_time'=>$run_time,"current_run_time"=>$current_run_time);
+		$this->output->set_output(json_encode($rdata,true));
+	}
+
+	public function device() {
+		$run_time=0;
+		$current_run_time=0;
+		$input_data = json_decode(trim(file_get_contents('php://input')), true);
+		$address = isset($input_data['address'])?$input_data['address']:"";
+		if(!$address){
+			$this->output->set_output(json_encode(['status'=>0,'msg'=>'address can not empty'],true));
+			return;
+		}
+		$chequebook_address = "";
+		$local_ip = "";
+		$incentive_reward=0;
+		$total_consumed=0;
+		$location="";
+		$status="";
+		$tot=0;
+		$cot=0;
+		$this->psql = $this->load->database('ette',true);
+		$result=$this->psql->query("SELECT * FROM nodes WHERE owner_address='".$address."' order by last_updated desc limit 1")->row_array();
+		if($result&&count($result)>0){
+			$chequebook_address=$result['chequebook_address'];
+			$local_ip=$result['local_ip'];
+			$incentive_reward=$result['incentive_reward'];
+			$status=$result['status']==1?"Active":"Inactive";
+
+			$funcSelector = "0x70a08231";
+			$data = $funcSelector . "000000000000000000000000" . substr($address,2);
+			$method  = "eth_call";
+			$param1 = ["data" => $data, "to" => $this->contract];
+			$params  = [$param1,"latest"];
+			$blance = $this->call($method,$params);
+			if(is_array($blance)){
+				$blance=0;
+			}
+			$blance=hexdec($blance);
+			$in=$this->psql->query("select IFNULL(SUM(cast(ifi_amount AS DECIMAL(30))),0) num from transactions_dam WHERE `to`='".$address."'")->row_array()['num'];
+			$out=$this->psql->query("select IFNULL(SUM(cast(ifi_amount AS DECIMAL(30))),0) num from transactions_dam WHERE `from`='".$address."'")->row_array()['num'];
+			$total_consumed=$incentive_reward+$in-$out-$blance;////消费总额可通过（总激励额 + 转入 - 转出 - 余额）简单计算，目前不要求精确数值。
+
+			$url = "http://api.ipstack.com/".$local_ip."?access_key=f03837ea28b5f80f3229d75382fec415&format=1";
+			$result = commit_curl($url);
+			$arr = json_decode($result,true);
+			if(isset($arr["country_name"]))
+				$location=$arr["city"].", ".$arr["country_name"];
+			//$result=$this->psql->query("SELECT TIMESTAMPDIFF(SECOND,(SELECT b.startup_time FROM nodes_startup b WHERE a.owner_address=b.owner_address and a.chequebook_address=b.chequebook_address and a.local_ip=b.local_ip order by b.startup_time ASC LIMIT 1),last_updated) run_time,TIMESTAMPDIFF(SECOND,(SELECT b.startup_time FROM nodes_startup b WHERE a.owner_address=b.owner_address and a.chequebook_address=b.chequebook_address and a.local_ip=b.local_ip order by b.startup_time DESC LIMIT 1),last_updated) c_run_time FROM nodes a WHERE owner_address='".$address."' and chequebook_address='".$chequebook_address."' and local_ip='".$local_ip."'")->row_array();
+			$result=$this->psql->query("SELECT TIMESTAMPDIFF(SECOND,(SELECT b.startup_time FROM nodes_startup b WHERE a.owner_address=b.owner_address order by b.startup_time ASC LIMIT 1),last_updated) run_time,TIMESTAMPDIFF(SECOND,(SELECT b.startup_time FROM nodes_startup b WHERE a.owner_address=b.owner_address order by b.startup_time DESC LIMIT 1),last_updated) c_run_time FROM nodes a WHERE owner_address='".$address."'")->row_array();
+			if($result&&count($result)>0){
+				$tot=round($result['run_time']*1.0/60,2);
+				$cot=round($result['c_run_time']*1.0/60,2);
+			}
+		}
+		$rdata=array('status'=>1,'msg'=>'','incentive_reward'=>$incentive_reward,"total_consumed"=>$total_consumed,"location"=>$location,"status"=>$status,"tot"=>$tot,"cot"=>$cot);
+		$this->output->set_output(json_encode($rdata,true));
+	}
+
+	public function save_transfer_log() {
+		$input_data = json_decode(trim(file_get_contents('php://input')), true);
+		$hash = isset($input_data['hash'])?$input_data['hash']:"";
+		$from = isset($input_data['from'])?$input_data['from']:"";
+		$to = isset($input_data['to'])?$input_data['to']:"";
+		$ifi_amount = isset($input_data['ifi_amount'])?$input_data['ifi_amount']:"";
+		$timestamp = isset($input_data['timestamp'])?$input_data['timestamp']:"";
+		$this->psql = $this->load->database('ette',true);
+		$data = array(
+			'hash'  =>  $hash,
+			'from'  =>  $from,
+			'to'    =>  $to,
+			'ifi_amount' =>  $ifi_amount,
+			'timestamp' =>  $timestamp
+		);
+		$this->psql->insert('transactions_dam', $data);
+		$rdata=array('status'=>1,'msg'=>'');
+		$this->output->set_output(json_encode($rdata,true));
 	}
 
 	public function get_nonce($address) {

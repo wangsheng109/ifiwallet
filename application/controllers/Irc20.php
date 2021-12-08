@@ -87,11 +87,32 @@ class Irc20 extends MY_Controller {
                     'node_address'  =>  $owner_address,
                     'ifi_amount'    =>  base_convert($ifi_amount,16,10),
                     'timestamp'     =>  time(),
+                    'from_account'  =>  $from,
                     'tx_hash'       =>  $tx_res
                 );
                 $this->ette_model->insert_award_log($data);
                 echo "\r\n send ifi sucessfully with tx hash : ".$tx_res."\r\n";
             }
+        }
+
+        //store the incentive_reward in db
+        public function set_incentive_reward()
+        {
+            $input_data = json_decode(trim(file_get_contents('php://input')), true);
+            $owner_address = $input_data['owner_address'];
+            $ifi_amount = $input_data['ifi_amount'];
+            $tx_res = $input_data['tx_res'];
+            $from_account = $input_data['from_account'];
+
+            $data = array(
+                'node_address'  =>  $owner_address,
+                'ifi_amount'    =>  base_convert($ifi_amount,16,10),
+                'timestamp'     =>  time(),
+                'from_account'  =>  $from_account,
+                'type'          =>  1,
+                'tx_hash'       =>  $tx_res
+            );
+            $this->ette_model->insert_award_log($data);
         }
 
         public function register_node()
@@ -109,6 +130,8 @@ class Irc20 extends MY_Controller {
             $this->ette_model->set_node($data, $owner_address);
             echo "\r\n register/update the node at the init \r\n";
         }
+
+        
 
         private function add_random($amount)
         {
