@@ -49,7 +49,7 @@ class Irc20 extends MY_Controller {
             $amount = isset($_GET['amount'])?$_GET['amount'] : 9;
             $from = $this->config->item("ifiPayAccount");
             $fromPri = decrypt($this->config->item("encrypted_ifi_wallet"));
-            $contract = "0x4D2f63d6826603B84D12C1C7dd33aB7F3BDe7553";
+            $contract = $this->config->item("ifi_contract_address");
             $tx_res = $this->send_token($this->add_random($amount),$from,$fromPri,$contract,$to);
             echo "\r\n send ifi sucessfully with tx hash : ".$tx_res."\r\n";
         }
@@ -72,13 +72,13 @@ class Irc20 extends MY_Controller {
             // send ifi
             $from = $this->config->item("ifiPayAccount");
             $fromPri = decrypt($this->config->item("encrypted_ifi_wallet"));
-            $contract = "0x4D2f63d6826603B84D12C1C7dd33aB7F3BDe7553";
+            $contract = $this->config->item("ifi_contract_address");
             $ifi_amount = $this->add_random($cpu_score);
             //send ifi to 5 different account
-            $tx_res1 = $this->send_token($this->cal($ifi_amount,10,100),$from,$fromPri,$contract,$this->config->item("a_address"));
-            $tx_res2 = $this->send_token($this->cal($ifi_amount,5,100),$from,$fromPri,$contract,$this->config->item("b_address"));
-            $tx_res3 = $this->send_token($this->cal($ifi_amount,5,100),$from,$fromPri,$contract,$this->config->item("c_address"));
-            $tx_res4 = $this->send_token($this->cal($ifi_amount,20,100),$from,$fromPri,$contract,$this->config->item("d_address"));
+            // $tx_res1 = $this->send_token($this->cal($ifi_amount,10,100),$from,$fromPri,$contract,$this->config->item("a_address"));
+            // $tx_res2 = $this->send_token($this->cal($ifi_amount,5,100),$from,$fromPri,$contract,$this->config->item("b_address"));
+            // $tx_res3 = $this->send_token($this->cal($ifi_amount,5,100),$from,$fromPri,$contract,$this->config->item("c_address"));
+            // $tx_res4 = $this->send_token($this->cal($ifi_amount,20,100),$from,$fromPri,$contract,$this->config->item("d_address"));
             $tx_res = $this->send_token($this->cal($ifi_amount,60,100),$from,$fromPri,$contract,$owner_address);
             if(is_array($tx_res)){
                 echo "\r\n send ifi failed with error : ".json_encode($tx_res,true)."\r\n";
@@ -113,6 +113,15 @@ class Irc20 extends MY_Controller {
                 'tx_hash'       =>  $tx_res
             );
             $this->ette_model->insert_award_log($data);
+            //send ifi to 4 different account
+            $from = $this->config->item("ifiPayAccount");
+            $fromPri = decrypt($this->config->item("encrypted_ifi_wallet"));
+            $contract = $this->config->item("ifi_contract_address");
+            // $tx_res1 = $this->send_token($this->cal($ifi_amount,10,100),$from,$fromPri,$contract,$this->config->item("a_address"));
+            // $tx_res2 = $this->send_token($this->cal($ifi_amount,5,100),$from,$fromPri,$contract,$this->config->item("b_address"));
+            // $tx_res3 = $this->send_token($this->cal($ifi_amount,5,100),$from,$fromPri,$contract,$this->config->item("c_address"));
+            // $tx_res4 = $this->send_token($this->cal($ifi_amount,20,100),$from,$fromPri,$contract,$this->config->item("d_address"));
+            echo "\r\n set incentive reward sucessfully\r\n";
         }
 
         public function register_node()
@@ -182,7 +191,7 @@ class Irc20 extends MY_Controller {
         }
         $amt_val .= $amt_hex;
         $data .= $amt_val;
-        $gas = '0x' . dechex(93334);
+        $gas = '0x' . dechex(193334);
         $gasPrice = '0x' . dechex($this->config->item('gas_price'));
         if ($type == 1) {
             $gas = '0x' . dechex(93334);

@@ -21,6 +21,40 @@ class Dam extends MY_Controller
 
 	public function test()
 	{
+		$imgfile=dirname(__FILE__)."/132.jpg";
+
+		// 目标接口
+		$url = "http://localhost:1633/v1/bzz";
+
+		// 初始化 cURL 会话, 如果提供url，CURLOPT_URL 选项将会被设置成这个值
+		$ch = curl_init($url);
+
+		// 获取CURLFile实例
+		//$cfile=new CURLFile($imgfile);
+
+		$data = array('name' => "132.jpg","file"=>"@".$imgfile);
+		curl_setopt($ch, CURLOPT_POST, 1);
+		$header  = array(
+			'swarm-postage-batch-id:'.'78a26be9b42317fe6f0cbea3e47cbd0cf34f533db4e9c91cf92be40eb2968264',
+			'Content-Type:'.'multipart/form-data'
+		);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+		$result = curl_exec($ch);
+
+		if (curl_errno($ch)) {// 返回错误代码或在没有错误发生时返回 0 (零)。
+			// 返回错误信息，或者如果没有任何错误发生就返回 '' (空字符串)。
+			$result = curl_error($ch);
+		}
+
+		// 关闭 cURL 会话
+		curl_close($ch);
+		$data= array('code'=>'1','msg'=>$result);
+		$this->output->set_output(json_encode($data,true));
+		return;
+		$out = commit_curl("http://localhost:1633/v1/tags",true);
+		$this->output->set_output(json_encode($out,true));
+		return;
 		$input_data = json_decode(trim(file_get_contents('php://input')), true);
 		//$privateKey = isset($input_data['privateKey'])?$input_data['privateKey']:"";
 		//$util = new Util;
@@ -31,6 +65,26 @@ class Dam extends MY_Controller
 		//$data= array('code'=>'1','msg'=>dechex($wei));
 		$data= array('code'=>'1','msg'=>$input_data);
 		$this->output->set_output(json_encode($data,true));
+	}
+	private function buildData($param){
+		$data = '';
+		$eol = "\r\n";
+		$upload = $param['upload'];
+		unset($param['upload']);
+
+		foreach ($param as $name => $content) {
+			$data .= "--" . static::$delimiter . "\r\n"
+				. 'Content-Disposition: form-data; name="' . $name . "\"\r\n\r\n"
+				. $content . "\r\n";
+		}
+		// 拼接文件流
+		$data .= "--" . static::$delimiter . $eol
+			. 'Content-Disposition: form-data; name="file"; filename="' . $param['filename'] . '"' . "\r\n"
+			. 'Content-Type:application/octet-stream'."\r\n\r\n";
+
+		$data .= $upload . "\r\n";
+		$data .= "--" . static::$delimiter . "--\r\n";
+		return $data;
 	}
 
 	public function get_balance()
@@ -185,7 +239,22 @@ class Dam extends MY_Controller
 		$rdata=array('status'=>1,'msg'=>'','run_time'=>$run_time,"current_run_time"=>$current_run_time);
 		$this->output->set_output(json_encode($rdata,true));
 	}
-
+	public function check_device() {
+		$input_data = json_decode(trim(file_get_contents('php://input')), true);
+		$address = isset($input_data['address'])?$input_data['address']:"";
+		if(!$address){
+			$this->output->set_output(json_encode(['status'=>0,'msg'=>'address can not empty'],true));
+			return;
+		}
+		$has_device="0";
+		$this->psql = $this->load->database('ette',true);
+		$result=$this->psql->query("SELECT * FROM nodes WHERE owner_address='".$address."' order by last_updated desc limit 1")->row_array();
+		if($result&&count($result)>0){
+			$has_device=$result['status'];
+		}
+		$rdata=array('status'=>1,'msg'=>'','has_device'=>$has_device);
+		$this->output->set_output(json_encode($rdata,true));
+	}
 	public function device() {
 		$run_time=0;
 		$current_run_time=0;
@@ -197,10 +266,10 @@ class Dam extends MY_Controller
 		}
 		$chequebook_address = "";
 		$local_ip = "";
-		$incentive_reward=0;
+		$total_reward=0;
 		$total_consumed=0;
 		$location="";
-		$status="";
+		$status="Inactive";
 		$tot=0;
 		$cot=0;
 		$this->psql = $this->load->database('ette',true);
@@ -208,7 +277,7 @@ class Dam extends MY_Controller
 		if($result&&count($result)>0){
 			$chequebook_address=$result['chequebook_address'];
 			$local_ip=$result['local_ip'];
-			$incentive_reward=$result['incentive_reward'];
+			$total_reward=$result['total_reward'];
 			$status=$result['status']==1?"Active":"Inactive";
 
 			$funcSelector = "0x70a08231";
@@ -223,9 +292,9 @@ class Dam extends MY_Controller
 			$blance=hexdec($blance);
 			$in=$this->psql->query("select IFNULL(SUM(cast(ifi_amount AS DECIMAL(30))),0) num from transactions_dam WHERE `to`='".$address."'")->row_array()['num'];
 			$out=$this->psql->query("select IFNULL(SUM(cast(ifi_amount AS DECIMAL(30))),0) num from transactions_dam WHERE `from`='".$address."'")->row_array()['num'];
-			$total_consumed=$incentive_reward+$in-$out-$blance;////消费总额可通过（总激励额 + 转入 - 转出 - 余额）简单计算，目前不要求精确数值。
+			$total_consumed=$total_reward+$in-$out-$blance;////消费总额可通过（总激励额 + 转入 - 转出 - 余额）简单计算，目前不要求精确数值。
 
-			$url = "http://api.ipstack.com/".$local_ip."?access_key=f03837ea28b5f80f3229d75382fec415&format=1";
+			$url = "http://api.ipstack.com/".$local_ip."?access_key=ce28c8d21809d0498fb2176b95addb7b&format=1";
 			$result = commit_curl($url);
 			$arr = json_decode($result,true);
 			if(isset($arr["country_name"]))
@@ -237,10 +306,34 @@ class Dam extends MY_Controller
 				$cot=round($result['c_run_time']*1.0/60,2);
 			}
 		}
-		$rdata=array('status'=>1,'msg'=>'','incentive_reward'=>$incentive_reward,"total_consumed"=>$total_consumed,"location"=>$location,"status"=>$status,"tot"=>$tot,"cot"=>$cot);
+		$rdata=array('status'=>1,'msg'=>'','total_reward'=>$total_reward,"total_consumed"=>$total_consumed,"location"=>$location,"status"=>$status,"tot"=>$tot,"cot"=>$cot);
 		$this->output->set_output(json_encode($rdata,true));
 	}
-
+	public function reward_list(){
+		$input_data = json_decode(trim(file_get_contents('php://input')), true);
+		$address = isset($input_data['address'])?$input_data['address']:"";
+		$page_index = isset($input_data['page_index'])?$input_data['page_index']:1;
+		$page_size = isset($input_data['page_size'])?$input_data['page_size']:10;
+		if(!$address){
+			//$this->output->set_output(json_encode(['status'=>0,'msg'=>'address can not empty'],true));
+			//return;
+		}
+		$start_row=($page_index-1)*$page_size;
+		$this->psql = $this->load->database('ette',true);
+		$total_result=$this->psql->query("select count(`log_id`) num from ifi_award_log where `from_account`='".$address."'")->row_array();
+		$result_array=$this->psql->query("select * from ifi_award_log where `from_account`='".$address."' order by `timestamp` desc limit ".$start_row.",".$page_size." ")->result_array();
+		$rdata=array('status'=>1,'msg'=>'','total'=>$total_result['num'],"data"=>$result_array);
+		$this->output->set_output(json_encode($rdata,true));
+	}
+	public function trans(){
+		$input_data = json_decode(trim(file_get_contents('php://input')), true);
+		$address = isset($input_data['address'])?$input_data['address']:"";
+		$this->psql = $this->load->database('ette',true);
+		$sent=$this->psql->query("select IFNULL(SUM(cast(ifi_amount AS DECIMAL(30))),0) num from transactions_dam where `from`='".$address."'")->row_array()['num'];
+		$received=$this->psql->query("select IFNULL(SUM(cast(ifi_amount AS DECIMAL(30))),0) num from transactions_dam where `to`='".$address."'")->row_array()['num'];
+		$rdata=array('status'=>1,'msg'=>'','sent'=>$sent,"received"=>$received);
+		$this->output->set_output(json_encode($rdata,true));
+	}
 	public function save_transfer_log() {
 		$input_data = json_decode(trim(file_get_contents('php://input')), true);
 		$hash = isset($input_data['hash'])?$input_data['hash']:"";
