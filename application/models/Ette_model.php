@@ -273,6 +273,11 @@ class Ette_model extends CI_Model {
         }
     }
 
+    public function insert_node_startup($data) {
+        // just insert it
+        $this->psql->insert('nodes_startup',$data);
+    }
+
     public function get_node_number() {
         $this->psql->select('id');
         $this->psql->from('nodes');

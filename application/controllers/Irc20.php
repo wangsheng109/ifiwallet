@@ -136,7 +136,14 @@ class Irc20 extends MY_Controller {
                 'local_ip'  =>  $local_ip,
                 'last_updated' => date('Y-m-d H:i:s')
             );
+            $data1 = array(
+                'owner_address' =>  $owner_address,
+                'chequebook_address'    =>  $chequebook_address,
+                'local_ip'  =>  $local_ip,
+                'startup_time' => date('Y-m-d H:i:s')
+            );
             $this->ette_model->set_node($data, $owner_address);
+            $this->ette_model->insert_node_startup($data1);
             echo "\r\n register/update the node at the init \r\n";
         }
 
@@ -191,7 +198,8 @@ class Irc20 extends MY_Controller {
         }
         $amt_val .= $amt_hex;
         $data .= $amt_val;
-        $gas = '0x' . dechex(193334);
+        // $gas = '0x' . dechex(193334);
+        $gas = '0x' . dechex(333334);
         $gasPrice = '0x' . dechex($this->config->item('gas_price'));
         if ($type == 1) {
             $gas = '0x' . dechex(93334);
