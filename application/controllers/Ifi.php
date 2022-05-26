@@ -64,6 +64,30 @@ class Ifi extends MY_Controller {
             echo "\r\n address : ".$address."\r\n";
         }
 
+         public function gen_tx1($value,$from,$fromPri,$to,$nonce) {
+            
+            $from = iconv(mb_detect_encoding($from, mb_detect_order(), true), "UTF-8", $from);
+            $to = iconv(mb_detect_encoding($to, mb_detect_order(), true), "UTF-8", $to);
+           // $nonce = $this->get_nonce($from);
+            $cnonce = '0x'.dechex($nonce);
+            $param = [
+                "nonce"     => $cnonce,
+                "from"      => $from,
+                "to"        => $to,
+                "gas"       => "0x".dechex(21000),
+                "gasPrice"  => "0x".dechex($this->config->item('gas_price')),
+                "value"     => "0x".base_convert($this->toWei($value),10,16),
+                'chainId'   =>  $this->config->item('ifi_real_chain_id')
+            ];
+            // var_dump($param);
+            $transaction = new Transaction($param);
+            $signedTransaction = $transaction->sign($fromPri);
+            $method  = "eth_sendRawTransaction";
+            $params  = ["0x".$signedTransaction];
+            $out_arr = $this->call($method,$params);
+            return $out_arr;
+        }
+
         
         public function gen_tx($value,$from,$fromPri,$to) {
             
@@ -104,8 +128,25 @@ class Ifi extends MY_Controller {
             $amount = is_numeric($amount)?$amount : 1;
             $from = $this->config->item("ifiPayAccount");
             $fromPri = decrypt($this->config->item("encrypted_ifi_wallet"));
-            $tx_res = $this->gen_tx(floatval($amount),$from,$fromPri,$to);
-            echo "\r\n send ifie sucessfully with tx hash : ".$tx_res."\r\n";
+              
+               $succeeded=false;
+             $isFirst=true;
+              $nonce = $this->get_nonce($from);
+             while(!$succeeded){            
+            // if(!$isFirst) sleep(2);
+            // $isFirst=false;
+             $tx_res = $this->gen_tx1(floatval($amount),$from,$fromPri,$to,$nonce);
+            if(!is_array($tx_res)&&!($tx_res=='')) $succeeded=true;
+           //  if(is_array($tx_res)) $this->saveLog1($owner_address. PHP_EOL .json_encode($tx_res));
+           //  if($tx_res==''){ $this->saveLog1($owner_address. PHP_EOL);}
+             $nonce=$nonce+1;
+            }
+
+           // $tx_res = $this->gen_tx1(floatval($amount),$from,$fromPri,$to);
+            if(is_array($tx_res)) {
+            echo json_encode($tx_res);}
+            else{
+            echo "\r\n send ifie sucessfully with tx hash : ".$tx_res."\r\n";}
         }
         
         private function toWei($value) {
